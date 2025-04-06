@@ -3,6 +3,9 @@ const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const dotenv = require('dotenv');
+const routes = require('./routes');
+const swaggerUi = require('swagger-ui-express');
+const swaggerSpec = require('./swagger');
 
 // Konfiguracja zmiennych środowiskowych
 dotenv.config();
@@ -25,6 +28,9 @@ app.get('/', (req, res) => {
   res.send('Planning Poker API is running');
 });
 
+app.use('/api', routes)
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+
 // Port serwera
 const PORT = process.env.PORT || 5000;
 
@@ -32,3 +38,7 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
+
+module.exports = {
+  app
+}

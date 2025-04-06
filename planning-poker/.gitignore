@@ -1,0 +1,23 @@
+# Docker
+docker-compose.override.yml
+docker-volume/
+*.local
+
+# Logs
+logs/
+*.log
+
+# OS-specific
+.DS_Store
+Thumbs.db
+
+# Editor folders
+.vscode/
+.idea/
+
+# Build
+dist/
+build/
+
+# Mongo data
+mongo-data/
