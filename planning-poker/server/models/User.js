@@ -26,7 +26,37 @@ const userSchema = new Schema({
   lastActive: {
     type: Date,
     default: Date.now
+  },
+  // Dodanie preferowanego typu talii
+  preferredDeckType: {
+    type: String,
+    enum: ['fibonacci', 'tshirt', 'custom'],
+    default: 'fibonacci'
+  },
+  // Dodanie statystyk użytkownika
+  statistics: {
+    roomsCreated: {
+      type: Number,
+      default: 0
+    },
+    sessionsParticipated: {
+      type: Number,
+      default: 0
+    },
+    estimationsGiven: {
+      type: Number,
+      default: 0
+    }
+  },
+  // Dodanie pola na avatar (opcjonalne)
+  avatar: {
+    type: String,
+    default: null
   }
 });
+
+// Indeksy dla efektywniejszego wyszukiwania
+userSchema.index({ username: 1 });
+userSchema.index({ lastActive: -1 });
 
 module.exports = mongoose.model('User', userSchema);

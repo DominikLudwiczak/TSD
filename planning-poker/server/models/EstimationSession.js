@@ -48,7 +48,34 @@ const estimationSessionSchema = new Schema({
   },
   completedAt: {
     type: Date
+  },
+  // Dodanie pola do przechowywania historii resetowania
+  resetHistory: [
+    {
+      resetAt: {
+        type: Date,
+        default: Date.now
+      },
+      resetBy: {
+        type: Schema.Types.ObjectId,
+        ref: 'User'
+      }
+    }
+  ],
+  // Dodanie pola dla notatek
+  notes: {
+    type: String,
+    trim: true
+  },
+  // Dodanie pola dla consensus (czy osiągnięto jednomyślność)
+  hasConsensus: {
+    type: Boolean,
+    default: false
   }
 });
+
+// Indeksy dla efektywniejszego wyszukiwania
+estimationSessionSchema.index({ room: 1, startedAt: -1 });
+estimationSessionSchema.index({ status: 1 });
 
 module.exports = mongoose.model('EstimationSession', estimationSessionSchema);

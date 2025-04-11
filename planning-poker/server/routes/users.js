@@ -1,3 +1,8 @@
+// server/routes/users.js
+const express = require('express');
+const router = express.Router();
+const userController = require('../controllers/userController');
+
 /**
  * @swagger
  * tags:
@@ -5,36 +10,19 @@
  *   description: User management
  */
 
+// GET /api/users/:username - Get user by username
+router.get('/:username', userController.getUserByUsername);
 
-const express = require('express');
-const router = express.Router();
-const userController = require('../controllers/userController');
+// POST /api/users - Create a new user
+router.post('/', userController.createUser);
 
-/**
- * @swagger
- * /users/{username}:
- *   get:
- *     summary: Get user by username
- *     tags: [Users]
- *     parameters:
- *       - in: path
- *         name: username
- *         required: true
- *         description: User Name
- *         schema:
- *           type: string
- *     responses:
- *       200:
- *         description: User found
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/User'
- *       404:
- *         description: User not found
- *       500:
- *         description: Internal Server Error
- */
-router.get('/:username', userController.findUserByUsername);
+// PUT /api/users/:id - Update a user
+router.put('/:id', userController.updateUser);
+
+// PUT /api/users/:id/activity - Update user's last activity timestamp
+router.put('/:id/activity', userController.updateUserActivity);
+
+// DELETE /api/users/:id - Delete a user
+router.delete('/:id', userController.deleteUser);
 
 module.exports = router;

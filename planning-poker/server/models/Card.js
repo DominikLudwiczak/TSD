@@ -21,7 +21,15 @@ const cardSchema = new Schema({
     type: String,
     enum: ['fibonacci', 'tshirt', 'custom'],
     default: 'fibonacci'
+  },
+  // Dodanie pola dla specjalnych kart jak "coffee break" czy "?"
+  isSpecial: {
+    type: Boolean,
+    default: false
   }
 });
+
+// Indeks dla efektywniejszego wyszukiwania
+cardSchema.index({ deckType: 1, sortOrder: 1 });
 
 module.exports = mongoose.model('Card', cardSchema);

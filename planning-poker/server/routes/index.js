@@ -1,9 +1,21 @@
+// server/routes/index.js
 const express = require('express');
 const router = express.Router();
 
-router.use('/cards', require('./cards'));
-router.use('/users', require('./users'));
-router.use('/rooms', require('./rooms'));
-router.use('/sessions', require('./sessions'));
+const cardRoutes = require('./cards');
+const roomRoutes = require('./rooms');
+const userRoutes = require('./users');
+const sessionRoutes = require('./sessions');
+
+// Register all routes
+router.use('/cards', cardRoutes);
+router.use('/rooms', roomRoutes);
+router.use('/users', userRoutes);
+router.use('/sessions', sessionRoutes);
+
+// Base route
+router.get('/', (req, res) => {
+  res.json({ message: 'Planning Poker API is running' });
+});
 
 module.exports = router;

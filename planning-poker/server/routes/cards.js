@@ -1,3 +1,8 @@
+// server/routes/cards.js
+const express = require('express');
+const router = express.Router();
+const cardController = require('../controllers/cardController');
+
 /**
  * @swagger
  * tags:
@@ -5,61 +10,19 @@
  *   description: Card management
  */
 
-const express = require('express');
-const router = express.Router();
-const cardController = require('../controllers/cardController');
-
-/**
- * @swagger
- * /cards:
- *   get:
- *     summary: Get all cards
- *     tags: [Cards]
- *     parameters:
- *       - in: query
- *         name: deckType
- *         schema:
- *           type: string
- *         description: Optional deck type filter (fibonacci, tshirt, custom)
- *     responses:
- *       200:
- *         description: List of cards
- *         content:
- *           application/json:
- *             schema:
- *               type: array
- *               items:
- *                 $ref: '#/components/schemas/Card'
- *       500:
- *         description: Internal Server Error
- */
+// GET /api/cards - Get all cards
 router.get('/', cardController.getAllCards);
 
-/**
- * @swagger
- * /cards/{id}:
- *   get:
- *     summary: Get card by ID
- *     tags: [Cards]
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         description: Card ID
- *         schema:
- *           type: string
- *     responses:
- *       200:
- *         description: Card found
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Card'
- *       404:
- *         description: Card not found
- *       500:
- *         description: Internal Server Error
- */
+// GET /api/cards/:id - Get card by ID
 router.get('/:id', cardController.getCardById);
+
+// POST /api/cards - Create a new card
+router.post('/', cardController.createCard);
+
+// PUT /api/cards/:id - Update a card
+router.put('/:id', cardController.updateCard);
+
+// DELETE /api/cards/:id - Delete a card
+router.delete('/:id', cardController.deleteCard);
 
 module.exports = router;
