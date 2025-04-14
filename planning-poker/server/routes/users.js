@@ -10,19 +10,131 @@ const userController = require('../controllers/userController');
  *   description: User management
  */
 
-// GET /api/users/:username - Get user by username
+/**
+ * @swagger
+ * /users/{username}:
+ *   get:
+ *     summary: Get user by username
+ *     tags: [Users]
+ *     parameters:
+ *       - in: path
+ *         name: username
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: User found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/User'
+ *       404:
+ *         description: User not found
+ */
 router.get('/:username', userController.getUserByUsername);
 
-// POST /api/users - Create a new user
+/**
+ * @swagger
+ * /users:
+ *   post:
+ *     summary: Create a new user
+ *     tags: [Users]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/User'
+ *     responses:
+ *       201:
+ *         description: User created
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/User'
+ */
 router.post('/', userController.createUser);
 
-// PUT /api/users/:id - Update a user
+/**
+ * @swagger
+ * /users/{id}:
+ *   put:
+ *     summary: Update a user
+ *     tags: [Users]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/User'
+ *     responses:
+ *       200:
+ *         description: User updated
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/User'
+ *       404:
+ *         description: User not found
+ */
 router.put('/:id', userController.updateUser);
 
-// PUT /api/users/:id/activity - Update user's last activity timestamp
+/**
+ * @swagger
+ * /users/{id}/activity:
+ *   put:
+ *     summary: Update user's last activity timestamp
+ *     tags: [Users]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               lastActive:
+ *                 type: string
+ *                 format: date-time
+ *     responses:
+ *       200:
+ *         description: Activity timestamp updated
+ *       404:
+ *         description: User not found
+ */
 router.put('/:id/activity', userController.updateUserActivity);
 
-// DELETE /api/users/:id - Delete a user
+/**
+ * @swagger
+ * /users/{id}:
+ *   delete:
+ *     summary: Delete a user
+ *     tags: [Users]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       204:
+ *         description: User deleted
+ *       404:
+ *         description: User not found
+ */
 router.delete('/:id', userController.deleteUser);
+
 
 module.exports = router;
