@@ -1,14 +1,23 @@
 .card-deck {
-    padding: 20px;
+  width: 100%;
+  padding: 16px 0;
+}
+
+.cards-container {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+}
+
+@media (max-width: 640px) {
+  .card {
+    width: 70px;
+    height: 100px;
+    margin: 0 4px 8px;
   }
   
-  .cards-container {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
+  .card-value {
+    font-size: 18px;
   }
-  
-  h2 {
-    text-align: center;
-    margin-bottom: 20px;
-  }
+}
