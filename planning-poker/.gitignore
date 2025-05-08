@@ -21,3 +21,7 @@ build/
 
 # Mongo data
 mongo-data/
+
+# Node modules
+node_modules/
+**/node_modules/
