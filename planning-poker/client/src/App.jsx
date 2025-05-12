@@ -15,6 +15,13 @@ function App() {
       )}
     </SocketProvider>
   );
+
+/*  return !userInfo ? (
+    <Home onJoin={setUserInfo} />
+    ) : (
+    <PlanningRoom user={userInfo} />
+  );*/
+
 }
 
 export default App;
