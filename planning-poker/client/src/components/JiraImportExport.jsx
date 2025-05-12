@@ -15,7 +15,7 @@ const JiraImportExport = ({ sessionId, onImportSuccess }) => {
 
   const handleImport = async () => {
     if (!file) {
-      setError('Please select a file to import');
+      setError('Wybierz plik do importu');
       return;
     }
 
@@ -28,18 +28,20 @@ const JiraImportExport = ({ sessionId, onImportSuccess }) => {
       formData.append('jiraFile', file);
       formData.append('sessionId', sessionId);
 
-      const response = await axios.post('/api/jira/import', formData, {
+      // Używamy pełnego URL serwera
+      const response = await axios.post('http://localhost:5000/api/jira/import', formData, {
         headers: {
           'Content-Type': 'multipart/form-data'
         }
       });
 
-      setSuccessMessage(`Successfully imported ${response.data.userStories.length} user stories`);
+      setSuccessMessage(`Pomyślnie zaimportowano ${response.data.userStories.length} historii użytkownika`);
       if (onImportSuccess) {
         onImportSuccess(response.data.userStories);
       }
     } catch (err) {
-      setError(err.response?.data?.error || 'Failed to import from JIRA');
+      console.error('Błąd importu:', err);
+      setError(err.response?.data?.error || 'Błąd importu z JIRA');
     } finally {
       setIsUploading(false);
     }
@@ -47,10 +49,11 @@ const JiraImportExport = ({ sessionId, onImportSuccess }) => {
 
   const handleExport = async () => {
     try {
-      // Użyj window.open do pobrania pliku
-      window.open(`/api/jira/export/${sessionId}`, '_blank');
+      // Używamy pełnego URL serwera
+      window.open(`http://localhost:5000/api/jira/export/${sessionId}`, '_blank');
     } catch (err) {
-      setError('Failed to export to JIRA');
+      console.error('Błąd eksportu:', err);
+      setError('Błąd eksportu do JIRA');
     }
   };
 
@@ -72,7 +75,7 @@ const JiraImportExport = ({ sessionId, onImportSuccess }) => {
           onClick={handleImport} 
           disabled={!file || isUploading}
         >
-          {isUploading ? 'Importing...' : 'Import User Stories'}
+          {isUploading ? 'Importowanie...' : 'Import User Stories'}
         </button>
       </div>
 
@@ -83,8 +86,8 @@ const JiraImportExport = ({ sessionId, onImportSuccess }) => {
         </button>
       </div>
 
-      {error && <div className="error-message">{error}</div>}
-      {successMessage && <div className="success-message">{successMessage}</div>}
+      {error && <div className="error-message" style={{ color: 'red', marginTop: '10px' }}>{error}</div>}
+      {successMessage && <div className="success-message" style={{ color: 'green', marginTop: '10px' }}>{successMessage}</div>}
     </div>
   );
 };

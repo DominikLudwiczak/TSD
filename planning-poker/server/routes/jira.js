@@ -3,8 +3,6 @@ const express = require('express');
 const router = express.Router();
 const multer = require('multer');
 const jiraService = require('../services/jiraService');
-const EstimationSession = require('../models/EstimationSession');
-const Room = require('../models/Room');
 
 // Konfiguracja multer do obsługi uploadu plików
 const upload = multer({ 
@@ -19,31 +17,24 @@ const upload = multer({
 router.post('/import', upload.single('jiraFile'), async (req, res) => {
   try {
     if (!req.file) {
-      return res.status(400).json({ error: 'No file uploaded' });
+      return res.status(400).json({ error: 'Nie przesłano pliku' });
     }
 
     const { sessionId } = req.body;
     if (!sessionId) {
-      return res.status(400).json({ error: 'Session ID is required' });
+      return res.status(400).json({ error: 'Wymagane ID sesji' });
     }
 
-    // Import user stories from JIRA file
-    const userStories = jiraService.importFromJira(req.file.buffer);
+    console.log('Otrzymano plik:', req.file.originalname, 'dla sesji:', sessionId);
     
-    // Save user stories to the database
-    const session = await EstimationSession.findById(sessionId);
-    if (!session) {
-      return res.status(404).json({ error: 'Estimation session not found' });
-    }
-
-    // Dodaj historie do sesji
-    session.userStories = [...(session.userStories || []), ...userStories];
-    await session.save();
+    // Import historii użytkownika z pliku JIRA
+    const userStories = jiraService.importFromJira(req.file.buffer, req.file.originalname);
+    console.log('Zaimportowano historie:', userStories);
 
     res.json({ success: true, userStories });
   } catch (error) {
-    console.error('Error importing from JIRA:', error);
-    res.status(500).json({ error: error.message || 'Failed to import from JIRA' });
+    console.error('Błąd importu z JIRA:', error);
+    res.status(500).json({ error: error.message || 'Błąd importu z JIRA' });
   }
 });
 
@@ -54,21 +45,44 @@ router.post('/import', upload.single('jiraFile'), async (req, res) => {
 router.get('/export/:sessionId', async (req, res) => {
   try {
     const { sessionId } = req.params;
+    console.log('Eksport JIRA dla sesji:', sessionId);
     
-    // Pobierz sesję z historii użytkownika
-    const session = await EstimationSession.findById(sessionId)
-      .populate('userStories')
-      .populate({
-        path: 'userStories',
-        populate: { path: 'tasks' }
-      });
-    
-    if (!session) {
-      return res.status(404).json({ error: 'Estimation session not found' });
-    }
+    // Tutaj normalnie pobierałbyś historie z bazy danych
+    // Dla demonstracji używamy przykładowych danych
+    const mockUserStories = [
+      {
+        id: "story-1",
+        title: "Implementacja importu/eksportu JIRA",
+        description: "Jako deweloper chcę móc importować i eksportować historie użytkownika z/do JIRA",
+        status: "inProgress",
+        finalEstimation: 5,
+        tasks: [
+          {
+            id: "task-1-1",
+            title: "Implementacja importu",
+            description: "Zaimplementować funkcję importu danych z JIRA",
+            status: "done"
+          },
+          {
+            id: "task-1-2",
+            title: "Implementacja eksportu",
+            description: "Zaimplementować funkcję eksportu danych do JIRA",
+            status: "todo"
+          }
+        ]
+      },
+      {
+        id: "story-2",
+        title: "Integracja WebSocketów",
+        description: "Jako deweloper chcę, żeby aplikacja aktualizowała się w czasie rzeczywistym",
+        status: "done",
+        finalEstimation: 3,
+        tasks: []
+      }
+    ];
 
     // Generowanie eksportu do JIRA
-    const jiraExport = jiraService.exportToJira(session.userStories);
+    const jiraExport = jiraService.exportToJira(mockUserStories);
     
     // Ustawienie nagłówków odpowiedzi
     res.setHeader('Content-Type', 'application/json');
@@ -77,8 +91,8 @@ router.get('/export/:sessionId', async (req, res) => {
     // Wysłanie pliku
     res.send(jiraExport);
   } catch (error) {
-    console.error('Error exporting to JIRA:', error);
-    res.status(500).json({ error: error.message || 'Failed to export to JIRA' });
+    console.error('Błąd eksportu do JIRA:', error);
+    res.status(500).json({ error: error.message || 'Błąd eksportu do JIRA' });
   }
 });
 

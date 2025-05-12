@@ -1,0 +1,37 @@
+{
+  "issues": [
+    {
+      "key": "PP-1",
+      "fields": {
+        "summary": "Implementacja importu z JIRA",
+        "description": "Jako deweloper chcę móc importować historie użytkownika z JIRA",
+        "status": {
+          "name": "To Do"
+        },
+        "subtasks": [
+          {
+            "key": "PP-2",
+            "fields": {
+              "summary": "Parsowanie pliku JSON",
+              "description": "Implementacja parsowania pliku JSON z JIRA",
+              "status": {
+                "name": "In Progress"
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "key": "PP-3",
+      "fields": {
+        "summary": "Implementacja eksportu do JIRA",
+        "description": "Jako deweloper chcę móc eksportować historie użytkownika do JIRA",
+        "status": {
+          "name": "To Do"
+        },
+        "subtasks": []
+      }
+    }
+  ]
+}

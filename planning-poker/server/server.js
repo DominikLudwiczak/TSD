@@ -114,6 +114,10 @@ const routes = require('./routes');
 
 dotenv.config();
 
+// Obsługa importowanych historii
+const roomStories = {}; // { roomId: [story1, story2, ...] }
+const roomCurrentStory = {}; // { roomId: currentStory }
+
 const app = express();
 const server = http.createServer(app);
 const io = socketIo(server, {
@@ -142,6 +146,26 @@ const roomVotes = {}; // { roomId: { userId: cardValue } }
 
 io.on('connection', (socket) => {
     console.log('New client connected:', socket.id);
+
+    // Wybór bieżącej historii
+    socket.on('select-current-story', (roomId, story) => {
+      roomCurrentStory[roomId] = story;
+      io.to(roomId).emit('current-story-selected', story);
+    });
+
+    // Aktualizacja historii użytkownika
+    socket.on('update-user-stories', (roomId, stories) => {
+      roomStories[roomId] = stories;
+      io.to(roomId).emit('user-stories-updated', stories);
+    });
+
+    // Reset wszystkich kart
+    socket.on('reset-all-cards', (roomId, sessionId) => {
+      if (roomVotes[roomId]) {
+        roomVotes[roomId] = {};
+      }
+      io.to(roomId).emit('estimation-reset', sessionId);
+    });
 
     // Dołączanie do pokoju
     socket.on('join-room', (roomId, userId) => {
