@@ -24,20 +24,33 @@ const JiraImportExport = ({ sessionId, onImportSuccess }) => {
     setSuccessMessage('');
 
     try {
+      console.log('Rozpoczęcie importu pliku:', file.name);
+      
       const formData = new FormData();
       formData.append('jiraFile', file);
       formData.append('sessionId', sessionId);
 
-      // Używamy pełnego URL serwera
+      // Sprawdź strukturę formData
+      for (let pair of formData.entries()) {
+        console.log(pair[0], pair[1]);
+      }
+
+      // Użyj axios z pełnym URL
       const response = await axios.post('http://localhost:5000/api/jira/import', formData, {
         headers: {
           'Content-Type': 'multipart/form-data'
         }
       });
 
-      setSuccessMessage(`Pomyślnie zaimportowano ${response.data.userStories.length} historii użytkownika`);
-      if (onImportSuccess) {
-        onImportSuccess(response.data.userStories);
+      console.log('Odpowiedź serwera:', response.data);
+      
+      if (response.data.success && response.data.userStories) {
+        setSuccessMessage(`Pomyślnie zaimportowano ${response.data.userStories.length} historii użytkownika`);
+        if (onImportSuccess) {
+          onImportSuccess(response.data.userStories);
+        }
+      } else {
+        setError('Brak danych w odpowiedzi serwera');
       }
     } catch (err) {
       console.error('Błąd importu:', err);
@@ -49,7 +62,7 @@ const JiraImportExport = ({ sessionId, onImportSuccess }) => {
 
   const handleExport = async () => {
     try {
-      // Używamy pełnego URL serwera
+      console.log('Eksport JIRA dla sesji:', sessionId);
       window.open(`http://localhost:5000/api/jira/export/${sessionId}`, '_blank');
     } catch (err) {
       console.error('Błąd eksportu:', err);

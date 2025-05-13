@@ -14,69 +14,114 @@ const PlanningRoom = ({ user }) => {
   const [userMap, setUserMap] = useState({}); // userId => nickname
   const [userStories, setUserStories] = useState([]);
   const [currentStory, setCurrentStory] = useState(null);
-  const [sessionId, setSessionId] = useState('session-1'); // Domyślny ID sesji - w rzeczywistości powinno to być pobierane z API
+  const [sessionId, setSessionId] = useState('session-1'); // Domyślny ID sesji
 
   useEffect(() => {
+    if (!socket) {
+      console.log('Socket not initialized yet');
+      return;
+    }
+
     // Dołączenie do pokoju
+    console.log('Joining room:', user.roomId, 'as', user.nickname);
     socket.emit('join-room', user.roomId, user.nickname);
 
-    // Nowy uczestnik dołącza
+    // Odbieranie aktualizacji uczestników
+    socket.on('participants-updated', (participantsList) => {
+      console.log('Participants updated:', participantsList);
+      setParticipants(participantsList.filter(p => p !== user.nickname));
+      
+      // Aktualizuj mapowanie userId -> nickname
+      const newUserMap = {};
+      participantsList.forEach(userId => {
+        newUserMap[userId] = userId;
+      });
+      setUserMap(newUserMap);
+    });
+
+    // Odbieranie aktualizacji głosów
+    socket.on('votes-updated', (votes) => {
+      console.log('Votes updated:', votes);
+      setAllVotes(votes);
+    });
+
+    // Zachowanie dla kompatybilności ze starym kodem
     socket.on('user-joined', (newNickname) => {
+      console.log('User joined (legacy event):', newNickname);
       setParticipants((prev) => (prev.includes(newNickname) ? prev : [...prev, newNickname]));
       setUserMap((prev) => ({ ...prev, [newNickname]: newNickname }));
     });
 
-    // Głosowanie
+    // Zachowanie dla kompatybilności ze starym kodem
     socket.on('card-selected', ({ userId, cardValue }) => {
+      console.log('Card selected event received (legacy):', userId, cardValue);
+      
       setAllVotes((prev) => {
+        // Najpierw usuń poprzedni głos tego samego użytkownika, jeśli istnieje
         const updated = prev.filter((v) => v.userId !== userId);
+        // Dodaj nowy głos
         return [...updated, { userId, card: cardValue }];
       });
 
       // Dodaj mapowanie userId → nickname, jeśli nieznane
       if (!userMap[userId]) {
-        setUserMap((prev) => ({ ...prev, [userId]: userId }));
+        setUserMap((prev) => ({ ...prev, [newNickname]: newNickname }));
       }
     });
 
     // Reset
     socket.on('card-reset-ack', (userId) => {
+      console.log('Card reset by', userId);
       setAllVotes((prev) => prev.filter((v) => v.userId !== userId));
     });
 
+    // Reset dla wszystkich
+    socket.on('estimation-reset', (sessionId) => {
+      console.log('Estimation reset for session:', sessionId);
+      setSelectedCard(null);
+      setShowCards(false);
+      // setAllVotes([]); // Nie jest potrzebne, bo otrzymamy zdarzenie votes-updated
+    });
+
     // Ujawnienie
-    socket.on('cards-revealed', () => {
+    socket.on('cards-revealed', (sessionId) => {
+      console.log('Cards revealed for session:', sessionId);
       setShowCards(true);
     });
 
     // Nasłuchuj aktualizacji historii użytkownika
     socket.on('user-stories-updated', (stories) => {
+      console.log('User stories updated:', stories);
       setUserStories(stories);
     });
 
     // Nasłuchuj wyboru historii użytkownika
     socket.on('current-story-selected', (story) => {
+      console.log('Current story selected:', story);
       setCurrentStory(story);
-      resetEstimation(); // Resetuj estymację gdy zmienia się historia
     });
 
     // Pobierz istniejące historie użytkownika przy ładowaniu
     fetchUserStories();
 
     return () => {
+      console.log('Cleaning up socket event listeners');
+      socket.off('participants-updated');
+      socket.off('votes-updated');
       socket.off('user-joined');
       socket.off('card-selected');
       socket.off('card-reset-ack');
+      socket.off('estimation-reset');
       socket.off('cards-revealed');
       socket.off('user-stories-updated');
       socket.off('current-story-selected');
     };
-  }, [socket, user, userMap]);
+  }, [socket, user.roomId, user.nickname]);
 
   // Funkcja do pobierania istniejących historii użytkownika
   const fetchUserStories = async () => {
     try {
-      // Tutaj powinno być pobieranie z API
+      // W przyszłości można to zastąpić rzeczywistym pobieraniem z API
       // const response = await fetch(`/api/sessions/${sessionId}/stories`);
       // const data = await response.json();
       // setUserStories(data);
@@ -90,6 +135,7 @@ const PlanningRoom = ({ user }) => {
 
   const handleSelect = (card) => {
     setSelectedCard(card);
+    console.log('Selecting card:', card, 'for user:', user.nickname, 'in room:', user.roomId);
     socket.emit('select-card', user.roomId, user.nickname, card);
     
     // Jeśli mamy wybraną historię, zapisz również estymację dla tej historii
@@ -100,14 +146,18 @@ const PlanningRoom = ({ user }) => {
 
   // Reset tylko własnego wyboru
   const handleReset = () => {
+    console.log('Resetting my card');
     setSelectedCard(null);
-    setShowCards(false);
-    setAllVotes((prev) => prev.filter((v) => v.userId !== user.nickname));
     socket.emit('card-reset', user.roomId, user.nickname);
   };
 
+  // Pokaż karty
   const handleReveal = () => {
+    console.log('Revealing cards for room:', user.roomId, 'session:', sessionId);
     socket.emit('reveal-cards', user.roomId, sessionId);
+    
+    // Dodatkowo ustaw lokalnie showCards na true dla natychmiastowej reakcji
+    setShowCards(true);
     
     // Jeśli mamy wybraną historię, zapisz finalną estymację dla tej historii
     if (currentStory && allVoted) {
@@ -117,16 +167,16 @@ const PlanningRoom = ({ user }) => {
 
   // Resetuje estymację dla wszystkich
   const resetEstimation = () => {
+    console.log('Resetting estimation for all users');
     setSelectedCard(null);
     setShowCards(false);
-    setAllVotes([]);
     socket.emit('reset-all-cards', user.roomId, sessionId);
   };
 
   // Zapisz pojedynczą estymację dla historii
   const saveEstimation = async (storyId, estimation) => {
     try {
-      // Tutaj powinno być zapisywanie w API
+      // W przyszłości można to zastąpić rzeczywistym zapisem w API
       // await fetch(`/api/stories/${storyId}/estimation`, {
       //   method: 'POST',
       //   headers: { 'Content-Type': 'application/json' },
@@ -143,13 +193,13 @@ const PlanningRoom = ({ user }) => {
     if (!currentStory || !allVoted) return;
     
     // Oblicz finalną estymację (średnia, mediana lub inna logika)
-    const estimations = allVotes.map(v => v.card);
+    const estimations = allVotes.map(v => parseInt(v.card));
     const finalEstimation = Math.round(
       estimations.reduce((sum, val) => sum + val, 0) / estimations.length
     );
     
     try {
-      // Tutaj powinno być zapisywanie w API
+      // W przyszłości można to zastąpić rzeczywistym zapisem w API
       // await fetch(`/api/stories/${currentStory.id}/final-estimation`, {
       //   method: 'POST',
       //   headers: { 'Content-Type': 'application/json' },
@@ -171,14 +221,28 @@ const PlanningRoom = ({ user }) => {
   };
 
   const handleSelectStory = (story) => {
+    console.log('Selecting story:', story.title);
     setCurrentStory(story);
     socket.emit('select-current-story', user.roomId, story);
   };
 
   // Handler dla udanego importu historii z JIRA
   const handleImportSuccess = (importedStories) => {
-    setUserStories(prev => [...prev, ...importedStories]);
-    socket.emit('update-user-stories', user.roomId, [...userStories, ...importedStories]);
+    console.log('Imported stories:', importedStories);
+    
+    // Upewnij się, że nowe historie mają unikalne ID
+    const storiesWithIds = importedStories.map((story, index) => ({
+      ...story,
+      id: story.id || `story-${Date.now()}-${index}`
+    }));
+    
+    // Aktualizuj lokalny stan
+    const updatedStories = [...userStories, ...storiesWithIds];
+    setUserStories(updatedStories);
+    
+    // Wysyłamy aktualizację do innych uczestników
+    console.log('Updating stories for all users:', updatedStories);
+    socket.emit('update-user-stories', user.roomId, updatedStories);
   };
 
   const hasVoted = (nickname) =>
@@ -186,12 +250,22 @@ const PlanningRoom = ({ user }) => {
 
   const everyone = [...new Set([...participants, user.nickname])];
 
+  // Oblicz, czy wszyscy zagłosowali
   const allVoted = everyone.length > 0 &&
     everyone.every((nickname) =>
       allVotes.some((v) => v.userId === nickname)
     );
+    
+  // Dodaj debugowanie
+  useEffect(() => {
+    console.log('Current voting state:', {
+      everyone,
+      allVotes,
+      allVoted
+    });
+  }, [everyone, allVotes]);
 
-  const isCreator = true; // Tutaj powinna być prawdziwa logika sprawdzania czy użytkownik jest twórcą sesji
+  const isCreator = true; // W rzeczywistości powinna być to logika sprawdzania, czy użytkownik jest twórcą sesji
 
   return (
     <div style={{ padding: '20px' }}>
@@ -277,10 +351,22 @@ const PlanningRoom = ({ user }) => {
         
         <button 
           onClick={handleReveal} 
-          disabled={!allVoted || !currentStory}
+          disabled={!allVoted}
+          style={{ marginRight: '10px' }}
         >
           Pokaż karty
         </button>
+        
+        {/* Dodajemy awaryjny przycisk do pokazywania kart
+        <button 
+          onClick={() => {
+            console.log('Force revealing cards');
+            setShowCards(true);
+            socket.emit('reveal-cards', user.roomId, sessionId);
+          }}
+        >
+          Pokaż karty (awaryjny)
+        </button> */}
         
         {!allVoted && (
           <p style={{ color: 'gray', marginTop: '5px' }}>
@@ -326,11 +412,11 @@ const PlanningRoom = ({ user }) => {
               ))}
           </ul>
           
-          {allVoted && (
+          {allVotes.length > 0 && (
             <div style={{ marginTop: '10px' }}>
               <strong>Średnia estymacja: </strong>
               {Math.round(
-                allVotes.map(v => v.card).reduce((sum, val) => sum + val, 0) / allVotes.length
+                allVotes.map(v => parseInt(v.card)).reduce((sum, val) => sum + val, 0) / allVotes.length
               )}
             </div>
           )}
