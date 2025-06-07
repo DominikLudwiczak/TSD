@@ -12,7 +12,7 @@ export const SocketProvider = ({ children }) => {
   useEffect(() => {
     if (!socketRef.current) {
       console.log('Creating new socket connection');
-      socketRef.current = io('http://localhost:5000', {
+      socketRef.current = io(`${process.env.BACKEND_URL}`, {
         transports: ['websocket'],
         reconnection: true,
         reconnectionAttempts: 5,

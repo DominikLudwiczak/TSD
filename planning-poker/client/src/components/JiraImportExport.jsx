@@ -36,7 +36,7 @@ const JiraImportExport = ({ sessionId, onImportSuccess }) => {
       }
 
       // Użyj axios z pełnym URL
-      const response = await axios.post('http://localhost:5000/api/jira/import', formData, {
+      const response = await axios.post(`${process.env.BACKEND_URL}/api/jira/import`, formData, {
         headers: {
           'Content-Type': 'multipart/form-data'
         }
@@ -63,7 +63,7 @@ const JiraImportExport = ({ sessionId, onImportSuccess }) => {
   const handleExport = async () => {
     try {
       console.log('Eksport JIRA dla sesji:', sessionId);
-      window.open(`http://localhost:5000/api/jira/export/${sessionId}`, '_blank');
+      window.open(`${process.env.BACKEND_URL}/api/jira/export/${sessionId}`, '_blank');
     } catch (err) {
       console.error('Błąd eksportu:', err);
       setError('Błąd eksportu do JIRA');

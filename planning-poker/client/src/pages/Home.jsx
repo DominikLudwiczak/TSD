@@ -35,7 +35,7 @@ const Home = ({ onJoin }) => {
   
     try {
       // 1. Utwórz użytkownika (lub pomiń jeśli już istnieje)
-      const userRes = await axios.post('http://localhost:5000/api/users', {
+      const userRes = await axios.post(`${process.env.BACKEND_URL}/api/users`, {
       //const userRes = await createUser({
         username: nickname,
         displayName: nickname,
@@ -46,7 +46,7 @@ const Home = ({ onJoin }) => {
   
       // 2. Spróbuj utworzyć pokój – jeśli już istnieje, to kontynuuj
       try {
-        await axios.post('http://localhost:5000/api/rooms', {
+        await axios.post(`${process.env.BACKEND_URL}/api/rooms`, {
         //await createRoom({
           name: roomId,
           creator: user._id
