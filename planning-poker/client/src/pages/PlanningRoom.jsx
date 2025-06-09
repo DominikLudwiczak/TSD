@@ -1,7 +1,9 @@
+// client/src/pages/PlanningRoom.jsx - PEŁNA POPRAWIONA WERSJA
 import React, { useState, useEffect } from 'react';
 import Card from '../components/Card';
 import { useSocket } from '../context/SocketContext';
 import JiraImportExport from '../components/JiraImportExport';
+import TaskManager from '../components/TaskManager';
 
 const cards = [0, 1, 2, 3, 5, 8, 13, 21];
 
@@ -65,7 +67,7 @@ const PlanningRoom = ({ user }) => {
 
       // Dodaj mapowanie userId → nickname, jeśli nieznane
       if (!userMap[userId]) {
-        setUserMap((prev) => ({ ...prev, [newNickname]: newNickname }));
+        setUserMap((prev) => ({ ...prev, [userId]: userId }));
       }
     });
 
@@ -103,6 +105,7 @@ const PlanningRoom = ({ user }) => {
 
     // Pobierz istniejące historie użytkownika przy ładowaniu
     fetchUserStories();
+    
 
     return () => {
       console.log('Cleaning up socket event listeners');
@@ -121,13 +124,31 @@ const PlanningRoom = ({ user }) => {
   // Funkcja do pobierania istniejących historii użytkownika
   const fetchUserStories = async () => {
     try {
-      // W przyszłości można to zastąpić rzeczywistym pobieraniem z API
-      // const response = await fetch(`/api/sessions/${sessionId}/stories`);
-      // const data = await response.json();
-      // setUserStories(data);
+    // TESTOWE USER STORIES
+      const testStories = [
+        {
+          _id: 'story-1',
+          id: 'story-1',
+          title: 'Implementacja logowania',
+          description: 'Dodać funkcjonalność logowania użytkowników z JWT',
+          status: 'todo',
+          room: user.roomId,
+          tasks: []
+        },
+        {
+          _id: 'story-2', 
+          id: 'story-2',
+          title: 'Dashboard użytkownika',
+          description: 'Utworzyć panel użytkownika z podstawowymi informacjami',
+          status: 'todo',
+          room: user.roomId,
+          tasks: []
+        }
+      ];
       
-      // Tymczasowo używamy pustej tablicy jako placeholder
-      setUserStories([]);
+      setUserStories(testStories);
+      console.log('Dodano testowe User Stories');
+      
     } catch (error) {
       console.error('Error fetching user stories:', error);
     }
@@ -245,6 +266,28 @@ const PlanningRoom = ({ user }) => {
     socket.emit('update-user-stories', user.roomId, updatedStories);
   };
 
+  // NOWA FUNKCJA: Handler dla aktualizacji User Story z zadaniami
+  const handleUserStoryUpdate = (updatedStory) => {
+    console.log('User story updated with tasks:', updatedStory);
+    
+    // Aktualizuj currentStory jeśli to ta sama historia
+    if (currentStory && currentStory._id === updatedStory._id) {
+      setCurrentStory(updatedStory);
+    }
+    
+    // Aktualizuj listę wszystkich historii
+    setUserStories(prev => 
+      prev.map(story => 
+        story._id === updatedStory._id ? updatedStory : story
+      )
+    );
+    
+    // Powiadom innych uczestników o aktualizacji
+    socket.emit('update-user-stories', user.roomId, userStories.map(story => 
+      story._id === updatedStory._id ? updatedStory : story
+    ));
+  };
+
   const hasVoted = (nickname) =>
     allVotes.some((v) => v.userId === nickname);
 
@@ -320,6 +363,15 @@ const PlanningRoom = ({ user }) => {
           <div>{currentStory.description}</div>
         </div>
       )}
+
+      {/* NOWA SEKCJA: TaskManager - zarządzanie zadaniami */}
+      {currentStory && (
+        <TaskManager 
+          userStory={currentStory}
+          currentUser={user}
+          onUpdate={handleUserStoryUpdate}
+        />
+      )}
   
       {/* Sekcja kart planowania */}
       <div style={{ marginBottom: '20px' }}>
@@ -356,17 +408,6 @@ const PlanningRoom = ({ user }) => {
         >
           Pokaż karty
         </button>
-        
-        {/* Dodajemy awaryjny przycisk do pokazywania kart
-        <button 
-          onClick={() => {
-            console.log('Force revealing cards');
-            setShowCards(true);
-            socket.emit('reveal-cards', user.roomId, sessionId);
-          }}
-        >
-          Pokaż karty (awaryjny)
-        </button> */}
         
         {!allVoted && (
           <p style={{ color: 'gray', marginTop: '5px' }}>
