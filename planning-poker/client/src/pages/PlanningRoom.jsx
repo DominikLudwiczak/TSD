@@ -146,6 +146,9 @@ const PlanningRoom = ({ user }) => {
 
   // Reset tylko własnego wyboru
   const handleReset = () => {
+    const confirmed = window.confirm("Are you sure you want to reset your selection?");
+    if (!confirmed) return;
+
     console.log('Resetting my card');
     setSelectedCard(null);
     socket.emit('card-reset', user.roomId, user.nickname);
@@ -167,11 +170,15 @@ const PlanningRoom = ({ user }) => {
 
   // Resetuje estymację dla wszystkich
   const resetEstimation = () => {
+    const confirmed = window.confirm("Are you sure you want to reset everyone's estimation?");
+    if (!confirmed) return;
+
     console.log('Resetting estimation for all users');
     setSelectedCard(null);
     setShowCards(false);
     socket.emit('reset-all-cards', user.roomId, sessionId);
   };
+
 
   // Zapisz pojedynczą estymację dla historii
   const saveEstimation = async (storyId, estimation) => {

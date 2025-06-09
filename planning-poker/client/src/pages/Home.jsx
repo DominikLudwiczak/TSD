@@ -9,6 +9,7 @@ const Home = ({ onJoin }) => {
   const [nickname, setNickname] = useState('');
   const [roomId, setRoomId] = useState('');
   const [inviteLink, setInviteLink] = useState('');
+  const [acceptedPolicy, setAcceptedPolicy] = useState(false); //US3.4
 
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
@@ -29,12 +30,12 @@ const Home = ({ onJoin }) => {
   };*/
 
   const handleJoin = async () => {
-    if (!nickname) return;
+    if (!nickname || !acceptedPolicy) return;
     const finalRoomId = roomId || uuidv4();
 
   
     try {
-      // 1. Utwórz użytkownika (lub pomiń jeśli już istnieje)
+      // Utwórz użytkownika (lub pomiń jeśli już istnieje)
       const userRes = await axios.post(`${process.env.REACT_APP_BACKEND_URL}/api/users`, {
       //const userRes = await createUser({
         username: nickname,
@@ -44,7 +45,7 @@ const Home = ({ onJoin }) => {
       });
       const user = userRes.data;    //definiujemy user zanim go użyjemy
   
-      // 2. Spróbuj utworzyć pokój – jeśli już istnieje, to kontynuuj
+      // Utwórz pokój – jeśli już istnieje, to kontynuuj
       try {
         await axios.post(`${process.env.REACT_APP_BACKEND_URL}/api/rooms`, {
         //await createRoom({
@@ -53,10 +54,10 @@ const Home = ({ onJoin }) => {
         });
       } catch (roomErr) {
         if (roomErr.response?.status !== 400) throw roomErr;
-        console.warn('Pokój już istnieje – dołączamy do istniejącego.');
+        console.warn('Room already exists – joining the existing one.');
       }
   
-      // 3. Dołącz – przekazujemy dane do App
+      // Dołącz – przekazujemy dane do App
       onJoin({
         _id: user._id,
         nickname: user.username,
@@ -64,8 +65,8 @@ const Home = ({ onJoin }) => {
       });
   
     } catch (err) {
-      console.error('Błąd z backendu:', err.response?.data || err.message);
-      alert('Błąd: ' + (err.response?.data?.error || err.message));
+      console.error('Backend error:', err.response?.data || err.message);
+      alert('Error: ' + (err.response?.data?.error || err.message));
     }
   };
   
@@ -78,7 +79,7 @@ const Home = ({ onJoin }) => {
 
   const handleCopyInviteLink = () => {
     navigator.clipboard.writeText(inviteLink);
-    alert('Link skopiowany do schowka!');
+    alert('Link copied to clipboard!');
   };
   
 
@@ -93,32 +94,55 @@ const Home = ({ onJoin }) => {
 
   return (
     <div style={{ padding: '20px' }}>
-      <h1>Dołącz do planowania</h1>
+      <h1>Join the Planning Session</h1>
       <input
         placeholder="Nick"
         value={nickname}
         onChange={(e) => setNickname(e.target.value)}
         style={{ display: 'block', marginBottom: '10px' }}
       />
+
       <input
-        placeholder="ID pokoju (opcjonalne)"
+        placeholder="Room ID (optional)"
         value={roomId}
         onChange={(e) => setRoomId(e.target.value)}
         style={{ display: 'block', marginBottom: '10px' }}
       />
-      <button onClick={handleJoin} style={{ marginRight: '10px' }}>Dołącz</button>
+
+      {/* Checkbox RODO */}
+      <label style={{ display: 'block', marginBottom: '10px' }}>
+        <input
+          type="checkbox"
+          checked={acceptedPolicy}
+          onChange={() => setAcceptedPolicy(!acceptedPolicy)}
+        />{' '}
+        I accept the <a href="https://en.wikipedia.org/wiki/Privacy_policy" target="_blank" rel="noopener noreferrer">privacy policy</a>
+      </label>
+
+      <button
+        onClick={handleJoin}
+        disabled={!acceptedPolicy || !nickname}
+        style={{
+          marginRight: '10px',
+          opacity: !acceptedPolicy || !nickname ? 0.5 : 1,
+          cursor: !acceptedPolicy || !nickname ? 'not-allowed' : 'pointer'
+        }}
+      >
+        Join
+      </button>
+
       <button onClick={handleGenerateInvite}>Invite</button>
 
       {inviteLink && (
         <div style={{ marginTop: '20px' }}>
-          <p>Link do zaproszenia:</p>
+          <p>Invitation link:</p>
           <input
             type="text"
             value={inviteLink}
             readOnly
             style={{ width: '100%', marginBottom: '5px' }}
           />
-          <button onClick={handleCopyInviteLink}>Skopiuj link</button>
+          <button onClick={handleCopyInviteLink}>Copy link</button>
         </div>
       )}
     </div>
