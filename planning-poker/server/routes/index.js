@@ -14,11 +14,25 @@ router.use('/rooms', roomRoutes);
 router.use('/users', userRoutes);
 router.use('/sessions', sessionRoutes);
 router.use('/jira', jiraRouter); // Dodaj nowy router
+const authRoutes = require('./auth'); // SPRAWDŹ CZY TO JEST
+
+router.use('/auth', authRoutes); // I TO TEŻ
 
 // Base route
 router.get('/', (req, res) => {
   res.json({ message: 'Planning Poker API is running' });
 });
+
+
+// Import existing routes
+const userStoriesRoutes = require('./userStories');
+
+// Mount routes
+
+router.use('/user-stories', userStoriesRoutes);
+router.use('/auth', authRoutes); // NOWY
+
+
 
 // Sprawdź, czy te moduły istnieją
 try {
